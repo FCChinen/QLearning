@@ -3,6 +3,7 @@ from qtable import qtable
 import numpy as np
 from os import system
 import time
+import pprint
 # Defining the variables
 """
 
@@ -49,9 +50,9 @@ system('clear')
 q_values = {
     0 : { 1 : 0, 2 : 0, 3 : 0, 4 : 0}
     , 1 : { 1 : 0, 2 : 0, 3 : 0, 4 : 0}
-    , 2 : { 1 : 0, 2 : 0, 3 : 0, 4 : 0}
+    , 2 : { 1 : 10, 2 : 0, 3 : 0, 4 : 0}
     , 3 : { 1 : 0, 2 : 0, 3 : 0, 4 : 0}
-    , 4 : { 1 : 0, 2 : 0, 3 : 0, 4 : 0}
+    , 4 : { 1 : -10, 2 : 0, 3 : 0, 4 : 0}
     , 5 : { 1 : 0, 2 : 0, 3 : 0, 4 : 0}
     , 6 : { 1 : 0, 2 : 0, 3 : 0, 4 : 0}
     , 7 : { 1 : 0, 2 : 0, 3 : 0, 4 : 0}
@@ -59,23 +60,26 @@ q_values = {
 }
 print("dict: " + str(q_values))
 
-table = qtable(q_values)
+n_iterations = 1000
+table = qtable(v0 = q_values, decay_rate=0.9, min_steps=n_iterations)
 
-max_step = 20
-cur_step = 0
+cur_step = 1
 best_score = 0
 won = 0
 loss = 0
-step_only_exploit = -1
 still_learning = True
+gg = False # Termina o jogo
+terminate = False # Termina o algoritmo
 
-while cur_step <= max_step:
-    # 1 iteration of the game
+trajectory = []
+
+
+
+while terminate == False:
     G = lizardgame()
     gg = False
     old_pos = -99
     last_action = -99
-    decay_rate = 0.01 # 
     while gg == False:
         for print_i in range(6,-1, -3):
             for i in range(0, 3):
@@ -94,27 +98,67 @@ while cur_step <= max_step:
                     print('')
         print('')
         G.print_reward()
+        print("Score: " + str(G.get_sum_reward()))
         if (old_pos != -99):
             print('old pos: '+str(old_pos) + ' last action: ' + str(last_action))
         print('You are in '+ str(G.get_lizardpos()))
-        print("step: " + str(cur_step))
+        
         old_pos = G.get_lizardpos()
         #time.sleep(1)
-        actions = G.posible_action()
-        if not(G.check_end()): 
-            #print(actions)
-            # a = int(input('What action do you want to take?'))
+        actions = G.posible_action(old_pos)
+        if old_pos != 2 and old_pos != 4:
             """
             Q Learning Answer
             """
             a = table.choose_action(actions, G.get_lizardpos())
             last_action = a
-            table.update_q(G.get_lizardpos(), G.posible_action(), a, G.reward_cur_pos())
-            G.update_lizardpos(a, old_pos)
+            print('chosen action' +str(last_action))
+            next_s_a = []
+            # new_pos = s'
+            new_pos = G.new_pos(a, old_pos)
+            # candidates_next_action = candidates to be a'
+            candidates_next_action = G.posible_action(new_pos)
+            next_s_a.append([new_pos, candidates_next_action])
+            """
+            new_pos = G.new_pos(a, old_pos)
+            print("next pos: "+ str(new_pos))
+            for actions in G.posible_action(new_pos):
+                posibles_next_states = G.new_pos(actions, new_pos)
+                posibles_next_actions = G.posible_action(posibles_next_states)
+                next_s_a.append([posibles_next_states, posibles_next_actions])
+            print('next_s_a: '+str(next_s_a))
+            """
+            table.update_q(next_s_a, a,G.get_lizardpos(), G.reward_cur_pos())
+            G.update_lizardpos(new_pos)
+            trajectory.append(a)
             #system('clear')
         else:
-            print('G G')
+            a = table.choose_action(actions, G.get_lizardpos())
+            last_action = a
+            print('chosen action' +str(last_action))
+            next_s_a = []
+            # new_pos = s'
+            new_pos = G.new_pos(a, old_pos)
+            # candidates_next_action = candidates to be a'
+            candidates_next_action = G.posible_action(new_pos)
+            next_s_a.append([new_pos, candidates_next_action])
+            """
+            ERRADO
+            for next_action in  G.posible_action(new_pos):
+                posible_next_state = G.new_pos(next_action, new_pos)
+                posible_next_action = G.posible_action(posible_next_state)
+                next_s_a.append([posible_next_state, posible_next_action])
+                print("s', a': "+str(next_s_a))
+            """
+            G.reward_cur_pos()
+            # table.update_q(next_s_a, a,G.get_lizardpos(), G.reward_cur_pos())
+            #G.update_lizardpos(a, old_pos)
             score = G.get_sum_reward()
+            if cur_step > 700:
+                table.update_trajectory_list(trajectory, score) # Só adiciona na lista de trajetórias se convergiu
+            #print('Lista de Trajetórias: ' + str(table.unique_trajectory))
+            print('Última trajetória: ' + str(trajectory))
+            trajectory = []
             table.print_qtable()
             if score > 0:
                 won += 1
@@ -122,18 +166,21 @@ while cur_step <= max_step:
                 loss += 1
             if best_score < score:
                 best_score = score
+            cur_step+=1
+            print("step: " + str(cur_step))
+            terminate = table.check_threshold(cur_step)
+            print('Egreedy = ' + str(table.egreedy))
             gg = True
-    new_egreedy = table.egreedy - decay_rate # multiplicar ao invés de subtrair
-    if new_egreedy >= 0:
-        table.egreedy = new_egreedy
-        print(str('egreedy: '+str(table.egreedy)))
-    elif still_learning == True:
-        still_learning = False
-        step_only_exploit = cur_step
-    cur_step+=1
+        print("QTable:")
+        table.print_qtable()
 
-        
 
-print('won: ' + str(won) + ' times of ' + str(max_step) + ' total tries')
-print('best score: ' + str(best_score))
-print('stop learning at iteration: ' + str(step_only_exploit))
+print("pos 0: "+str(table.values[0]))
+print("pos 1: "+str(table.values[1]))
+print("pos 2: "+str(table.values[2]))
+print("pos 3: "+str(table.values[3]))
+print("pos 4: "+str(table.values[4]))
+for key, value in table.trajectories_score.items():
+    if value["count"] > 20:
+        print("valores: " + str(value))
+        print(table.unique_trajectory[key])

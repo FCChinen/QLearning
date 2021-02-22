@@ -1,78 +1,120 @@
 """
 Q-Learning algorithm based on:
-    Q-Learning Explained - A Reinforcement Learning Technique
+    Q-Learning Explained - A Reinforcement Learning Technique:
+    
     youtube.com/watch?v=RNvCVVJaA&ab_channel=deeplizard
+    
     or:
+
     https://deeplizard.com/learn/video/qhRNvCVVJaA
-
-What is necessary to this algorithm works?
-Q-Table: Is a table(Or a matrix) that contains the reward value of every action that the agent may take. It is initially zero, because the agent does not know anything about the environment.
-Update Q-Table function: Everytime that the agent takes an action, the Q-Table must be updated to the value of the taken action. This way, the agent can learn when exploring.
-Epsilon Greedy(e): This variable is to define when to EXPLORE or to EXPLOIT. It means that when you know nothing about the environment you should explore(update the Q-Table with valid values) and when the Q-Table has enough information, you should EXPLOIT, so you know where to go to maximize the the reward function. The epsilon usually is initially set to 1(100% probability that the agent will explore) and eventually this value is decreased, increasing the chance to the EXPLOIT what it had already learned. So the more they explore the more greedy they become to exploit!
-RNG: To evalute if the agent will either explore or exploit, we generate a random number -> if RNG < e then explore else exploit.
-Alpha: Denotes the learning rate. This parameter indicates how easily it will the new Q-Value will overwrite the old Q-Value.
-
-New Q-Value Equation:
- q_new = (1 - Alpha) * q_old + Alpha * LearnedValue
-
-Learned Value: Is the current reward plus the discount factor multiplied per the maximum reward of the next action.
-
-
-Is a good thing to do a Max steps, in case the of some interation takes too much steps to terminate.
-q(s', a')
-s -> s'
 Author: Felipe C Chinen
 """
-
 import numpy as np
 import random as rd
+
 
 class qtable:
     """
     v0 are the initial values for the Q-Table.
     """
-    def __init__(self, v0 = {}, alpha = 0.7 , discount = 0.99, egreedy = 1):
+    def __init__(self, v0 = {}, alpha = 0.7 , discount = 0.99, egreedy = 1, decay_rate = 0.1, min_steps = 1000):
         self.values = v0 # QTable
-        self.alpha = alpha
-        self.discount = discount
-        self.egreedy = egreedy
+        self.alpha = alpha # Taxa de aprendizado
+        self.discount = discount # Taxa de desconto
+        self.egreedy = egreedy # Epsilon Greedy
+        self.decay_rate = decay_rate # Taxa de decaimento
+
+        # As variáveis daqui para frente, são apenas para verificar performance
+
+        self.trajectories = [] # Lista que conterá as trajetórias que irão conter cada estado percorrido
+        self.stop_rate = 0.025 # Fator adicionado, quando a trajetória passar de fator, o algoritmo irá finalizar e irá printar a melhor trajetória e o seu melhor resultado
+        self.min_steps = min_steps
+        self.unique_trajectory = [] # Lista que contém as trajetórias sem repetição
+        self.trajectories_score = {} # Dicionário que contém os scores de cada trajetória.
+        self.n_best_values = 3 # 
+
 
     def explore(self, actions, cur_state):
         choice = rd.randint(0, actions.size -1)
         return actions[choice]
 
     def exploit(self, actions, cur_state):
-        _, action = self.max_q_next_state(actions, cur_state)
+        _, action = self.max_q_next_state(cur_state, actions)
+        print('vai explorar: estado: ' + str(cur_state)+ ' ação escolhida: '+ str(action))
         return action
 
 
-    def max_q_next_state(self, actions, cur_state):
+    def max_q_next_state(self, cur_state, actions): # Essa função retorna a próxima ação a ser tomada e o valor da qtable
         max_q = float('-inf') # minus infinite for the first max_q
         best_action = -7
-        #print(str(actions))
+        print("cur state: "+str(cur_state))
+        print("actions: "+str(actions))
         for action in actions:
-            print("cur_q: "+ str(action) + " " + str(cur_state))
+            #print("action: "+ str(action) + " state: " + str(cur_state))
             cur_q = self.values[cur_state][action]
+            print('estado = '+ str(cur_state) + ', q = '+str(cur_q) + 'action: ' + str(action))
             if cur_q > max_q:
                 max_q = cur_q
                 best_action = action
         if max_q == float('-inf'):
             print('Bug no MAX Q NEXT STATE')
+        print('melhor action: ' + str(best_action) + ' melhor q: ' + str(max_q))
         return max_q, best_action
 
-    def update_q(self, q_state, next_actions, taken_action,cur_reward):
-        #learned value
-        best_q, best_action = self.max_q_next_state(next_actions, q_state)
-        l_value = cur_reward + best_q
+    def update_q(self, next_s_a, taken_action, cur_state, cur_reward):
+        # next_s_a = Q(s', a') é uma lista que contém a tupla 
+        # Calculo do próximo valor da qtable
+        # Falta codar a parte do next state!!!
+        # Você tem que achar a melhor ação para o próximo estado
+        # No momento está achando o do estado corrente!!!!!!
+        # só fazer um loop para iterar sobre a tupla estado e ação verificar o melhor e retornar.
+        # Provavelmente o algoritmo irá convergir!!
+        # Obtendo o melhor q e a melhor ação
+        best_q = float('-inf')
+        # best_action = -1
+        for candidate_best_states in next_s_a:
+            s, a = candidate_best_states
+            best_q_aux, _ = self.max_q_next_state(s, a)
+            if s == 1:
+                print('s = 1 a = ' + str(a) + ' q =' + str(best_q_aux))
+            if (best_q_aux > best_q):
+                best_q = best_q_aux
+                #best_action = best_action_aux
 
-        # new Q = 1 - alpha & old Q + alfa * learned value
-        self.values[q_state][taken_action] = (1-self.alpha)*self.values[q_state][best_action] + self.alpha*(l_value)
+
+        # Obtendo o valor do Valor aprendido(Learning Value)
+        l_value = cur_reward + best_q 
+
+        # Equação: new Q = 1 - alpha & old Q + alfa * learned value
+        self.values[cur_state][taken_action] = (1-self.alpha)*self.values[cur_state][taken_action] + self.alpha*(l_value)
 
     def choose_action(self, actions, cur_state):
-        if rd.random() < self.egreedy: # RNG to check if either is going to explore or going to exploit.
-            return self.explore(actions, cur_state)
+        self.egreedy *= self.decay_rate # Multiplicando pela taxa de decaimento, aumentando a chance do agente explorar ao invés de aprender
+        rng = rd.random()
+        print('rng = '+str(rng)+' egreedy = '+str(self.egreedy))
+        if rng < self.egreedy: # Compara o fator egreedy com um valor aleatório.
+            
+            return self.explore(actions, cur_state) # Aprende no caso de ser menor que egreedy
         else:
-            return self.exploit(actions, cur_state)
+            return self.exploit(actions, cur_state) # Explora caso seja maior
+
+    # Funções abaixo NÃO pertencem necessariamente ao QLearning, no entanto, é uma maneira para verificar a sua performance
 
     def print_qtable(self):
         print(str(self.values))
+
+    def update_trajectory_list(self, last_trajectory, score):
+        # trajectories.append(last_trajectory)
+        if last_trajectory in self.unique_trajectory: # Verifica se a trajetória já está na lista de trajetórias
+            self.trajectories_score[self.unique_trajectory.index(last_trajectory)]["count"] += 1 # Se estiver aumenta um no contador
+        else:
+            self.unique_trajectory.append(last_trajectory) # Se não estiver adicinoa na lista
+            self.trajectories_score[self.unique_trajectory.index(last_trajectory)] = {"score" : 0, "count" : 0} # Adiciona um novo valor para a trajetória
+            self.trajectories_score[self.unique_trajectory.index(last_trajectory)]["score"] = score # Atribui o valor da sua pontuação
+            self.trajectories_score[self.unique_trajectory.index(last_trajectory)]["count"] = 1 # Inicializa o contador como 1
+
+    def check_threshold(self, steps):
+        if steps > self.min_steps:
+            return True
+        else:
+            return False
