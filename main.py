@@ -4,6 +4,8 @@ import numpy as np
 from os import system
 import time
 import pprint
+import matplotlib.pyplot as plt
+
 # Defining the variables
 """
 
@@ -46,6 +48,11 @@ melhorar o jogo
     8 = empty_8 
 
 """
+
+def movingaverage(interval, window_size):
+    window= np.ones(int(window_size))/float(window_size)
+    return np.convolve(interval, window, 'same')
+
 system('clear')
 q_values = {
     0 : { 1 : 0, 2 : 0, 3 : 0, 4 : 0}
@@ -60,7 +67,7 @@ q_values = {
 }
 print("dict: " + str(q_values))
 
-n_iterations = 1000
+n_iterations = 200
 table = qtable(v0 = q_values, decay_rate=0.9, min_steps=n_iterations)
 
 cur_step = 1
@@ -72,7 +79,7 @@ gg = False # Termina o jogo
 terminate = False # Termina o algoritmo
 
 trajectory = []
-
+score_y = []
 
 
 while terminate == False:
@@ -119,15 +126,6 @@ while terminate == False:
             # candidates_next_action = candidates to be a'
             candidates_next_action = G.posible_action(new_pos)
             next_s_a.append([new_pos, candidates_next_action])
-            """
-            new_pos = G.new_pos(a, old_pos)
-            print("next pos: "+ str(new_pos))
-            for actions in G.posible_action(new_pos):
-                posibles_next_states = G.new_pos(actions, new_pos)
-                posibles_next_actions = G.posible_action(posibles_next_states)
-                next_s_a.append([posibles_next_states, posibles_next_actions])
-            print('next_s_a: '+str(next_s_a))
-            """
             table.update_q(next_s_a, a,G.get_lizardpos(), G.reward_cur_pos())
             G.update_lizardpos(new_pos)
             trajectory.append(a)
@@ -142,18 +140,11 @@ while terminate == False:
             # candidates_next_action = candidates to be a'
             candidates_next_action = G.posible_action(new_pos)
             next_s_a.append([new_pos, candidates_next_action])
-            """
-            ERRADO
-            for next_action in  G.posible_action(new_pos):
-                posible_next_state = G.new_pos(next_action, new_pos)
-                posible_next_action = G.posible_action(posible_next_state)
-                next_s_a.append([posible_next_state, posible_next_action])
-                print("s', a': "+str(next_s_a))
-            """
             G.reward_cur_pos()
             # table.update_q(next_s_a, a,G.get_lizardpos(), G.reward_cur_pos())
             #G.update_lizardpos(a, old_pos)
             score = G.get_sum_reward()
+            score_y.append(score)
             if cur_step > 700:
                 table.update_trajectory_list(trajectory, score) # Só adiciona na lista de trajetórias se convergiu
             #print('Lista de Trajetórias: ' + str(table.unique_trajectory))
@@ -173,14 +164,13 @@ while terminate == False:
             gg = True
         print("QTable:")
         table.print_qtable()
+"""
+x = np.arange(1, len(score_y))
+plt.plot(score_y)
+plt.show()
+"""
 
 
-print("pos 0: "+str(table.values[0]))
-print("pos 1: "+str(table.values[1]))
-print("pos 2: "+str(table.values[2]))
-print("pos 3: "+str(table.values[3]))
-print("pos 4: "+str(table.values[4]))
-for key, value in table.trajectories_score.items():
-    if value["count"] > 20:
-        print("valores: " + str(value))
-        print(table.unique_trajectory[key])
+#y_av = movingaverage(score_y, 20)
+plt.plot(score_y,"r")
+plt.show()
