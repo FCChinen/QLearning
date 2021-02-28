@@ -1,7 +1,6 @@
 """
-Labirinto no qual o lagarto deve passar por obstáculos até chegar no ponto final
-O labirinto é uma matriz NxN, no qual N é passado por parâmetro pelo usuário,
-No qual N deve ser maior ou igual a 4. Pois senão, não é possivel adicionar obstáculos para obstruir a passagem do agente.
+Labirinto no qual o lagarto deve evitar os obstáculos(Árvores) até chegar no ponto final, a fim de tentar encontrar o melhor caminho.
+O labirinto é uma matriz NxN, no qual N é passado por parâmetro pelo usuário, no qual N deve ser maior ou igual a 4. Pois senão, não é possivel adicionar obstáculos para obstruir a passagem do agente.
 
 Orientação dos eixos do labirinto:
     -> x (Cresce para direita)
@@ -76,24 +75,19 @@ class Maze(tk.Tk, object):
             if action == 0: # Para cima
                 print('cima')
                 self.step_pos[1] += 1
-                #self.step_widget.append(new_step_widget)
 
             elif action == 1: # Para baixo
                 print('baixo')
                 self.step_pos[1] -= 1
-                #self.step_widget.append(new_step_widget)
-
 
             elif action == 2: # Para esquerda
                 print('esquerda')
                 self.step_pos[0] -= 1
-                #self.step_widget.append(new_step_widget)
 
             else: # para direita
                 print('direita')
                 self.step_pos[0] += 1
-                #self.step_widget.append(new_step_widget)
-            
+
             print(str(self.step_pos))
             self.step_widget.append(self.canvas_widget.create_image(self.pixels * self.step_pos[0], self.pixels * self.step_pos[1], anchor = 'nw', image=self.img_step[count]))
             count+=1
