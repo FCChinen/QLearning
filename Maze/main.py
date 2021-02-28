@@ -39,11 +39,9 @@ while cur_step < num_steps:
         # Decidindo qual ação irá tomar
         action = QTable.choose_action(maze.posible_actions(maze.get_lizard_pos()), maze.get_lizard_pos())
         print("Ação tomada: "+str(action))
-        #time.sleep(0.01)
 
         new_pos = maze.get_next_pos(action)
         
-        #print("Nova pos: "+str(new_pos))
         candidates_next_action = maze.posible_actions(new_pos)
         next_s_a.append([new_pos, candidates_next_action])
         QTable.update_q(next_s_a, action,maze.get_lizard_pos(), maze.get_reward())
@@ -72,7 +70,6 @@ while cur_step < num_steps:
     maze.reset()
     
     cur_step += 1
-    #QTable.egreedy *= QTable.decay_rate
     print("\n\n\n cur step ="+str(cur_step))
 
 print(str(QTable.trajectories_score))
@@ -82,13 +79,13 @@ for key, value in QTable.trajectories_score.items():
     print('value: ' + str(value))
     if value['score'] == best_score:
         best_key = key
-#print(str(QTable.unique_trajectory[best_key]))
+print(str(QTable.unique_trajectory[best_key]))
 plt.plot(score_y,"r")
 plt.show()
+print("best key: " + str(best_key))
+print(str(QTable.unique_trajectory[best_key]))
 maze.render_best_trajectory(QTable.unique_trajectory[best_key])
-plt.plot(score_y,"r")
-plt.show()
 maze.mainloop()
 
-maze.print_qtable()
+#QTable.print_qtable()
 

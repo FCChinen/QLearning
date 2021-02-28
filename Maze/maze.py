@@ -1,6 +1,6 @@
 """
 Labirinto no qual o lagarto deve passar por obstáculos até chegar no ponto final
-O labirinto é uma matriz N+1xN+1, no qual N é passado por parâmetro pelo usuário,
+O labirinto é uma matriz NxN, no qual N é passado por parâmetro pelo usuário,
 No qual N deve ser maior ou igual a 4. Pois senão, não é possivel adicionar obstáculos para obstruir a passagem do agente.
 
 Orientação dos eixos do labirinto:
@@ -38,7 +38,9 @@ class Maze(tk.Tk, object):
         self.lizard_widget = None
         self.img_lizard = None
 
-        self.step_img = None
+        self.img_step = []
+        self.step_widget = []
+        self.step_pos = p0_lizard
 
         # Criando o ambiente visual
         self.create_visual()
@@ -66,27 +68,38 @@ class Maze(tk.Tk, object):
         self.lizard_widget = self.canvas_widget.create_image(self.pixels * self.lizard_pos[0], self.pixels * self.lizard_pos[1], anchor = 'nw', image=self.img_lizard)
 
     def create_visual_step(self, best_trajectory):
-        img_step = Image.open("imgs/footstepconverted.png")
-        self.step_img = ImageTk.PhotoImage(img_step)
-        intial_pos = self.lizard_p0
+        count = 0
+        
         for action in best_trajectory:
+            self.img_step.append(ImageTk.PhotoImage(Image.open("imgs/footstepconverted.png")))
+            #self.step_widget
             if action == 0: # Para cima
-                intial_pos[1] += self.pixels
-                
-                self.step_widget = self.canvas_widget.create_image(self.pixels * intial_pos[0], self.pixels * intial_pos[1], anchor = 'nw', image=self.step_img)
+                print('cima')
+                self.step_pos[1] += 1
+                #self.step_widget.append(new_step_widget)
 
             elif action == 1: # Para baixo
-                intial_pos[1] -= self.pixels
-                self.step_widget = self.canvas_widget.create_image(self.pixels * intial_pos[0], self.pixels * intial_pos[1], anchor = 'nw', image=self.step_img)
+                print('baixo')
+                self.step_pos[1] -= 1
+                #self.step_widget.append(new_step_widget)
 
 
             elif action == 2: # Para esquerda
-                intial_pos[0] -= self.pixels
-                self.step_widget = self.canvas_widget.create_image(self.pixels * intial_pos[0], self.pixels * intial_pos[1], anchor = 'nw', image=self.step_img)
+                print('esquerda')
+                self.step_pos[0] -= 1
+                #self.step_widget.append(new_step_widget)
 
             else: # para direita
-                intial_pos[0] += self.pixels
-                self.step_widget = self.canvas_widget.create_image(self.pixels * intial_pos[0], self.pixels * intial_pos[1], anchor = 'nw', image=self.step_img)
+                print('direita')
+                self.step_pos[0] += 1
+                #self.step_widget.append(new_step_widget)
+            
+            print(str(self.step_pos))
+            self.step_widget.append(self.canvas_widget.create_image(self.pixels * self.step_pos[0], self.pixels * self.step_pos[1], anchor = 'nw', image=self.img_step[count]))
+            count+=1
+            #if count == len(best_trajectory) - 1:
+            #    break
+        
 
     def create_visual(self):
         self.canvas_widget = tk.Canvas(self,  bg='white',

@@ -37,6 +37,12 @@ class qtable:
         self.n_best_values = 3 # 
 
     def create_dictionary(self):
+        """
+        Há a criação da QTable dentro da QTable.
+        Para cada posição da matriz de estados, haverá um valor chave no dicionário.
+        Para cada valor de estado, haverá um valor que contera uma dupla chave e valor, a primeira indicando a ação
+        e a segunda indicando o valor.
+        """
         for i in range(0, (self.N*self.N) -1):
             aux={}
             for j in self.actions:
@@ -58,7 +64,6 @@ class qtable:
 
     def exploit(self, actions, cur_state):
         _, action = self.max_q_next_state(cur_state, actions)
-        print('vai explorar: estado: ' + str(cur_state)+ ' ação escolhida: '+ str(action))
         return action
 
     def max_q_next_state(self, cur_state, actions): # Essa função retorna a próxima ação a ser tomada e o valor da qtable
